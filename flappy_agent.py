@@ -195,9 +195,9 @@ def run_game(nb_episodes, agent):
             print("score for this episode: %d" % score)
             env.reset_game()
             nb_episodes -= 1
+            print("score=%d" % score)
             score = 0
 
 
 agent = FlappyAgentMC()
-print(len(agent.states))
-run_game(100, agent)
+run_game(1, agent)
