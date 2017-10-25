@@ -74,7 +74,7 @@ class FlappyAgentMC(FlappyAgent):
         self.Q = {}
         for state in self.states:
             for action in range(0, 2):
-                Q[(state, action)] = 0
+                self.Q[(state, action)] = 0
 
 
     # Q(s,a) := (Q, s, a) + 1/n(s,a) * [G - Q(s,a)]
