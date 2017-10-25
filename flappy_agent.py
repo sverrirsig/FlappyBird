@@ -71,7 +71,9 @@ def run_game(nb_episodes, agent):
     while nb_episodes > 0:
         # pick an action
         # TODO: for training using agent.training_policy instead
-        action = agent.policy(env.game.getGameState())
+        state = parse_state(env.game.getGameState())
+
+        action = agent.policy(state)
 
         # step the environment
         reward = env.act(env.getActionSet()[action])
@@ -87,6 +89,15 @@ def run_game(nb_episodes, agent):
             env.reset_game()
             nb_episodes -= 1
             score = 0
+
+def parse_state(state):
+    new_state = {}
+    new_state['y_pos'] = state['player_y']
+    new_state['top_y_gap'] = state['next_pipe_top_y']
+    new_state['horizontal_distance_next_pipe'] = state['next_pipe_dist_to_player']
+    new_state['velocity'] = state['player_vel']
+
+    return new_state
 
 agent = FlappyAgent()
 run_game(1, agent)
