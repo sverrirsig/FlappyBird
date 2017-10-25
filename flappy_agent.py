@@ -1,6 +1,8 @@
 from ple.games.flappybird import FlappyBird
 from ple import PLE
 import random
+import numpy
+import itertools
 
 class FlappyAgent:
     def __init__(self):
@@ -56,6 +58,18 @@ class FlappyAgent:
 class FlappyAgentMC(FlappyAgent):
     def __init__(self):
         # TODO: you may need to do some initialization for your agent here
+        self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
+        self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
+        self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
+
+        self.states = list(itertools.product(*[
+            self.y_pos_intervals,
+            self.top_y_gap_intervals,
+            self.velocity_intervals,
+            self.horizontal_distance_next_pipe
+        ]))
+
         return
 
     def reward_values(self):
@@ -101,7 +115,7 @@ class FlappyAgentMC(FlappyAgent):
         print("state: %s" % state)
         # TODO: change this to to policy the agent has learned
         # At the moment we just return an action uniformly at random.
-        return random.randint(0, 1)
+        return 1
 
     def parse_state(self, state):
         new_state = {}
@@ -123,7 +137,7 @@ def run_game(nb_episodes, agent):
     # reward_values = agent.reward_values
     
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
-            reward_values = reward_values)
+              reward_values=reward_values)
     # TODO: to speed up training change parameters of PLE as follows:
     # display_screen=False, force_fps=True 
     env.init()
@@ -153,4 +167,5 @@ def run_game(nb_episodes, agent):
 
 
 agent = FlappyAgentMC()
-run_game(1, agent)
+print(len(agent.states))
+#run_game(1, agent)
