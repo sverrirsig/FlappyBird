@@ -72,13 +72,12 @@ class FlappyAgentMC(FlappyAgent):
         ]))
 
         self.Q = {}
-        for state in self.states:
-            for action in range(0, 2):
-                self.Q[(state, action)] = 0
-
         self.pi = {}
         for state in self.states:
             self.pi[state] = random.randint(0, 1)
+            for action in range(0, 2):
+                self.Q[(state, action)] = 0
+                self.pi[state] = random.randint(0, 1)
 
         self.observations = []
 
@@ -177,7 +176,7 @@ def run_game(nb_episodes, agent):
 
         # step the environment
         reward = env.act(env.getActionSet()[action])
-        print("reward=%d" % reward)
+        #print("reward=%d" % reward)
 
         # TODO: for training let the agent observe the current state transition
 
