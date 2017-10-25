@@ -77,11 +77,12 @@ class FlappyAgentMC(FlappyAgent):
             self.pi[state] = random.randint(0, 1)
             for action in range(0, 2):
                 self.Q[(state, action)] = 0
-                self.pi[state] = random.randint(0, 1)
+                self.pi[state] = 0 if random.randint(0, 2) == 0 else 1
 
         self.observations = []
 
         self.discount = 1
+        self.epsilon = 0.1
 
     # Q(s,a) := (Q, s, a) + 1/n(s,a) * [G - Q(s,a)]
 
@@ -111,6 +112,11 @@ class FlappyAgentMC(FlappyAgent):
                 G = r + self.discount * G
                 self.Q[(s, a)] = G
 
+            for (s, a, r) in reversed(self.observations):
+                max_a = self.Q[(s, a)]
+                for i in range(0, 2):
+                    self.pi[s] = 1 - self.epsilon + self.epsilon / 2 if a == max_a else self.epsilon / 2
+
         return
 
     def training_policy(self, state):
@@ -120,7 +126,7 @@ class FlappyAgentMC(FlappyAgent):
             training_policy is called once per frame in the game while training
         """
         # TODO: change this to to policy the agent is supposed to use while training
-
+ 
         return self.pi[state]
 
     def policy(self, state):
