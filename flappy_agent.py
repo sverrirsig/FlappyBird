@@ -109,7 +109,7 @@ class FlappyAgentMC(FlappyAgent):
         if end:
             G = 0
             for (s, a, r) in reversed(self.observations):
-                G = r * self.discount * G
+                G = r + self.discount * G
                 self.Q[(s, a)] = G
 
         return
