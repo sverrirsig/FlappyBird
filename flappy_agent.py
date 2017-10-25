@@ -76,6 +76,13 @@ class FlappyAgentMC(FlappyAgent):
             for action in range(0, 2):
                 self.Q[(state, action)] = 0
 
+        self.pi = {}
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+
+        self.observations = []
+
+        self.discount = 1
 
     # Q(s,a) := (Q, s, a) + 1/n(s,a) * [G - Q(s,a)]
 
@@ -98,9 +105,14 @@ class FlappyAgentMC(FlappyAgent):
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        
-
-
+        self.observations.append((s1, a, r))
+        if end:
+            print("Rakki")
+            # Todo Learn
+            G = 0
+            for (s, a, r) in reversed(self.observations):
+                G = r * self.discount * G
+                
 
         # TODO: learn from the observation
         return
@@ -114,7 +126,7 @@ class FlappyAgentMC(FlappyAgent):
         print("state: %s" % state)
         # TODO: change this to to policy the agent is supposed to use while training
         # At the moment we just return an action uniformly at random.
-        return random.randint(0, 1)
+        return self.pi[state]
 
     def policy(self, state):
         """ Returns the index of the action that should be done in state when training is completed.
@@ -146,9 +158,9 @@ def run_game(nb_episodes, agent):
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
     """
 
-    # reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
+    #reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
     # TODO: when training use the following instead:
-    reward_values = agent.reward_values
+    reward_values = agent.reward_values()
     
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
@@ -172,6 +184,7 @@ def run_game(nb_episodes, agent):
 
         score += reward
 
+        agent.observe(state, action, reward, env.game_over())
 
         # reset the environment if the game is over
         if env.game_over():
