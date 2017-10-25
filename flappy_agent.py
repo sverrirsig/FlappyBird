@@ -62,7 +62,7 @@ class FlappyAgentMC(FlappyAgent):
         self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
         self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)] # ToDo: Maybe refactor and make the first interval a bit bigger.
 
         self.states = list(itertools.product(*[
             self.y_pos_intervals,
@@ -76,6 +76,8 @@ class FlappyAgentMC(FlappyAgent):
             for action in range(0, 2):
                 self.Q[(state, action)] = 0
 
+
+    # Q(s,a) := (Q, s, a) + 1/n(s,a) * [G - Q(s,a)]
 
     def reward_values(self):
         """ returns the reward values used for training
