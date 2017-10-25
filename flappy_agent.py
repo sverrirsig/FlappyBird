@@ -57,7 +57,8 @@ class FlappyAgent:
 
 class FlappyAgentMC(FlappyAgent):
     def __init__(self):
-        # TODO: you may need to do some initialization for your agent here
+        super(FlappyAgentMC, self).__init__()
+
         self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
         self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
@@ -70,7 +71,11 @@ class FlappyAgentMC(FlappyAgent):
             self.horizontal_distance_next_pipe
         ]))
 
-        return
+        self.Q = {}
+        for state in self.states:
+            for action in range(0, 2):
+                Q[(state, action)] = 0
+
 
     def reward_values(self):
         """ returns the reward values used for training
@@ -82,7 +87,7 @@ class FlappyAgentMC(FlappyAgent):
         """
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, s2, end):
+    def observe(self, s1, a, r, end):
         """ this function is called during training on each step of the game where
             the state transition is going from state s1 with action a to state s2 and
             yields the reward r. If s2 is a terminal state, end==True, otherwise end==False.
@@ -91,6 +96,10 @@ class FlappyAgentMC(FlappyAgent):
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
+    
+
+
+
         # TODO: learn from the observation
         return
 
@@ -132,9 +141,9 @@ def run_game(nb_episodes, agent):
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
     """
 
-    reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
+    # reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
     # TODO: when training use the following instead:
-    # reward_values = agent.reward_values
+    reward_values = agent.reward_values
     
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
@@ -148,7 +157,7 @@ def run_game(nb_episodes, agent):
         # TODO: for training using agent.training_policy instead
         state = agent.parse_state(env.game.getGameState())
 
-        action = agent.policy(state)
+        action = agent.training_policy(state)
 
         # step the environment
         reward = env.act(env.getActionSet()[action])
@@ -157,7 +166,8 @@ def run_game(nb_episodes, agent):
         # TODO: for training let the agent observe the current state transition
 
         score += reward
-        
+
+
         # reset the environment if the game is over
         if env.game_over():
             print("score for this episode: %d" % score)
