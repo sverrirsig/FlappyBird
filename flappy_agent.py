@@ -67,8 +67,8 @@ class FlappyAgentMC(FlappyAgent):
         self.states = list(itertools.product(*[
             self.y_pos_intervals,
             self.top_y_gap_intervals,
+            self.horizontal_distance_next_pipe,
             self.velocity_intervals,
-            self.horizontal_distance_next_pipe
         ]))
 
         self.Q = {}
@@ -107,14 +107,11 @@ class FlappyAgentMC(FlappyAgent):
             """
         self.observations.append((s1, a, r))
         if end:
-            print("Rakki")
-            # Todo Learn
             G = 0
             for (s, a, r) in reversed(self.observations):
                 G = r * self.discount * G
-                
+                self.Q[(s, a)] = G
 
-        # TODO: learn from the observation
         return
 
     def training_policy(self, state):
@@ -123,9 +120,8 @@ class FlappyAgentMC(FlappyAgent):
 
             training_policy is called once per frame in the game while training
         """
-        print("state: %s" % state)
         # TODO: change this to to policy the agent is supposed to use while training
-        # At the moment we just return an action uniformly at random.
+
         return self.pi[state]
 
     def policy(self, state):
@@ -143,15 +139,18 @@ class FlappyAgentMC(FlappyAgent):
     # Gets a state in the original format that PyGame returns.
     # Both extracts the 4 keys in the problem description
     # And maps the value to the corresponding interval.
+    # Returns a tuple of:
+    # 1. the current y-position of the bird (player_y component of the game state)
+    # 2. the top y position of the next gap (next_pipe_top_y)
+    # 3. the horizontal distance between bird and next pipe (next_pipe_dist_to_player)
+    # 4. the current velocity of the bird (player_vel)
     def parse_state(self, state):
-        new_state = {}
-        new_state['y_pos'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
-        new_state['top_y_gap'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
-        new_state['horizontal_distance_next_pipe'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
-        new_state['velocity'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_vel']))
+        y_pos = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
+        top_y_gap = min(self.top_y_gap_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x:abs(x - state['player_vel']))
 
-        return new_state
-
+        return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
 
 def run_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
@@ -196,4 +195,4 @@ def run_game(nb_episodes, agent):
 
 agent = FlappyAgentMC()
 print(len(agent.states))
-run_game(1, agent)
+run_game(100, agent)
