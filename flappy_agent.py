@@ -74,7 +74,7 @@ class FlappyAgentMC(FlappyAgent):
         self.Q = {}
         for state in self.states:
             for action in range(0, 2):
-                Q[(state, action)] = 0
+                self.Q[(state, action)] = 0
 
 
     def reward_values(self):
@@ -96,7 +96,7 @@ class FlappyAgentMC(FlappyAgent):
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-    
+        
 
 
 
