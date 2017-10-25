@@ -126,12 +126,15 @@ class FlappyAgentMC(FlappyAgent):
         # At the moment we just return an action uniformly at random.
         return 1
 
+    # Gets a state in the original format that PyGame returns.
+    # Both extracts the 4 keys in the problem description
+    # And maps the value to the corresponding interval.
     def parse_state(self, state):
         new_state = {}
-        new_state['y_pos'] = state['player_y']
-        new_state['top_y_gap'] = state['next_pipe_top_y']
-        new_state['horizontal_distance_next_pipe'] = state['next_pipe_dist_to_player']
-        new_state['velocity'] = state['player_vel']
+        new_state['y_pos'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
+        new_state['top_y_gap'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
+        new_state['horizontal_distance_next_pipe'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
+        new_state['velocity'] = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_vel']))
 
         return new_state
 
@@ -178,4 +181,4 @@ def run_game(nb_episodes, agent):
 
 agent = FlappyAgentMC()
 print(len(agent.states))
-#run_game(1, agent)
+run_game(1, agent)
