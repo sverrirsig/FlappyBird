@@ -76,7 +76,7 @@ class FlappyAgentMC(FlappyAgent):
         for state in self.states:
             self.pi[state] = random.randint(0, 1)
             for action in range(0, 2):
-                self.Q[(state, action)] = 0
+                self.Q[(state, action)] = (0, 0)
                 self.pi[state] = 0 if random.randint(0, 2) == 0 else 1
 
         self.observations = []
@@ -110,7 +110,14 @@ class FlappyAgentMC(FlappyAgent):
             G = 0
             for (s, a, r) in reversed(self.observations):
                 G = r + self.discount * G
-                self.Q[(s, a)] = G
+                old_average = self.Q[(s, a)][0]
+                old_count = self.Q[(s, a)][1]
+                total = old_count * old_average
+
+                new_count = old_count + 1
+                new_average = (total+G) / new_count
+
+                self.Q[(s, a)] = (new_average, new_count)
 
             for (s, a, r) in reversed(self.observations):
                 if self.Q[(s, 0)] > self.Q[(s, 1)]:
@@ -204,16 +211,13 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-    numpy.save("Policy_1000000.npy", agent.pi)
+    numpy.save("Policy_50000.npy", agent.pi)
 
 
 def test_policy(agent):
-    print("--SCORE--")
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
-    # TODO: to speed up training change parameters of PLE as follows:
-    # display_screen=False, force_fps=True
     env.init()
     not_over = True
     score = 0
@@ -223,17 +227,9 @@ def test_policy(agent):
 
         action = agent.policy(state)
 
-        # step the environment
         reward = env.act(env.getActionSet()[action])
-        # print("reward=%d" % reward)
-
-        # TODO: for training let the agent observe the current state transition
-
         score += reward
 
-        #agent.observe(state, action, reward, env.game_over())
-
-        # reset the environment if the game is over
         if env.game_over():
             print("score for this episode: %d" % score)
             env.reset_game()
@@ -242,7 +238,7 @@ def test_policy(agent):
 
 
 agent = FlappyAgentMC()
-#run_game(1000000, agent)
-pi = numpy.load("Policy_1000000.npy").item()
+run_game(50000, agent)
+pi = numpy.load("Policy_50000.npy").item()
 agent.pi = pi
 test_policy(agent)
