@@ -113,11 +113,12 @@ class FlappyAgentMC(FlappyAgent):
                 self.Q[(s, a)] = G
 
             for (s, a, r) in reversed(self.observations):
-                max_a = self.Q[(s, a)]
-                for i in range(0, 2):
-                    self.pi[s] = 1 - self.epsilon + self.epsilon / 2 if a == max_a else self.epsilon / 2
+                if self.Q[(s, 0)] > self.Q[(s, 1)]:
+                    self.pi[s] = 0
+                else:
+                    self.pi[s] = 1
 
-        return
+            self.observations = []
 
     def training_policy(self, state):
         """ Returns the index of the action that should be done in state while training the agent.
@@ -126,8 +127,15 @@ class FlappyAgentMC(FlappyAgent):
             training_policy is called once per frame in the game while training
         """
         # TODO: change this to to policy the agent is supposed to use while training
- 
-        return self.pi[state]
+
+        actions = [0, 1]
+
+        greedy_action = self.pi[state]
+
+        if random.uniform(0, 1) < 0.95:
+            return greedy_action
+        else:
+            return [x for x in actions if x != greedy_action][0]
 
     def policy(self, state):
         """ Returns the index of the action that should be done in state when training is completed.
@@ -136,10 +144,9 @@ class FlappyAgentMC(FlappyAgent):
             policy is called once per frame in the game (30 times per second in real-time)
             and needs to be sufficiently fast to not slow down the game.
         """
-        print("state: %s" % state)
         # TODO: change this to to policy the agent has learned
         # At the moment we just return an action uniformly at random.
-        return 1
+        return self.pi[state]
 
     # Gets a state in the original format that PyGame returns.
     # Both extracts the 4 keys in the problem description
@@ -166,7 +173,7 @@ def run_game(nb_episodes, agent):
     # TODO: when training use the following instead:
     reward_values = agent.reward_values()
     
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     # TODO: to speed up training change parameters of PLE as follows:
     # display_screen=False, force_fps=True 
@@ -195,9 +202,37 @@ def run_game(nb_episodes, agent):
             print("score for this episode: %d" % score)
             env.reset_game()
             nb_episodes -= 1
-            print("score=%d" % score)
             score = 0
+
+    print("--SCORE--")
+    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
+              reward_values=reward_values)
+    # TODO: to speed up training change parameters of PLE as follows:
+    # display_screen=False, force_fps=True
+    env.init()
+    not_over = True
+    while not_over:
+        score = 0
+        state = agent.parse_state(env.game.getGameState())
+
+        action = agent.policy(state)
+
+        # step the environment
+        reward = env.act(env.getActionSet()[action])
+        # print("reward=%d" % reward)
+
+        # TODO: for training let the agent observe the current state transition
+
+        score += reward
+
+        #agent.observe(state, action, reward, env.game_over())
+
+        # reset the environment if the game is over
+        if env.game_over():
+            print("score for this episode: %d" % score)
+            env.reset_game()
+            not_over = False
 
 
 agent = FlappyAgentMC()
-run_game(1, agent)
+run_game(100, agent)
