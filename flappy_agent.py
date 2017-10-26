@@ -3,6 +3,7 @@ from ple import PLE
 import random
 import numpy
 import itertools
+import time
 
 class FlappyAgent:
     def __init__(self):
@@ -214,14 +215,14 @@ def run_game(nb_episodes, agent):
     numpy.save("Policy_50000.npy", agent.pi)
 
 
-def test_policy(agent):
+def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
     env.init()
-    not_over = True
+    scores = set()
     score = 0
-    while not_over:
+    while nb_episodes > 0:
 
         state = agent.parse_state(env.game.getGameState())
 
@@ -233,12 +234,16 @@ def test_policy(agent):
         if env.game_over():
             print("score for this episode: %d" % score)
             env.reset_game()
-            not_over = False
+            scores.add(score)
             score = 0
+            nb_episodes -= 1
+
+    print(max(scores))
 
 
 agent = FlappyAgentMC()
-run_game(50000, agent)
+#run_game(50000, agent)
 pi = numpy.load("Policy_50000.npy").item()
 agent.pi = pi
-test_policy(agent)
+test_policy(10, agent)
+
