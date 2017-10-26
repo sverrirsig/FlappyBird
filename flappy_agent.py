@@ -204,15 +204,21 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
+    numpy.save("Policy_1000000.npy", agent.pi)
+
+
+def test_policy(agent):
     print("--SCORE--")
+    reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
     # TODO: to speed up training change parameters of PLE as follows:
     # display_screen=False, force_fps=True
     env.init()
     not_over = True
+    score = 0
     while not_over:
-        score = 0
+
         state = agent.parse_state(env.game.getGameState())
 
         action = agent.policy(state)
@@ -232,7 +238,11 @@ def run_game(nb_episodes, agent):
             print("score for this episode: %d" % score)
             env.reset_game()
             not_over = False
+            score = 0
 
 
 agent = FlappyAgentMC()
-run_game(100, agent)
+#run_game(1000000, agent)
+pi = numpy.load("Policy_1000000.npy").item()
+agent.pi = pi
+test_policy(agent)
