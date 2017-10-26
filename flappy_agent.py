@@ -323,15 +323,15 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-    numpy.save("LR_0.01_Policy_50000.npy", agent.pi)
+    numpy.save("LR_0.1_Policy_50000.npy", agent.pi)
 
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
-    scores = set()
+    scores = []
     score = 0
     while nb_episodes > 0:
 
@@ -345,16 +345,19 @@ def test_policy(nb_episodes, agent):
         if env.game_over():
             print("score for this episode: %d" % score)
             env.reset_game()
-            scores.add(score)
+            scores.append(score)
             score = 0
             nb_episodes -= 1
 
-    print(max(scores))
+    print("Best score: %d" % max(scores))
+    print("Average: %d" % (sum(scores)/len(scores)))
 
 
-agent = FlappyAgentMCLearningRate(0.01)
-run_game(50000, agent)
-pi = numpy.load("LR_0.01_Policy_50000.npy").item()
+
+
+agent = FlappyAgentMCLearningRate(0.1)
+#run_game(50000, agent)
+pi = numpy.load("Average_Policy_50000.npy").item()
 agent.pi = pi
-test_policy(1, agent)
+test_policy(30, agent)
 
