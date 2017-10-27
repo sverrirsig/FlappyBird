@@ -242,7 +242,7 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-    numpy.save("LR_0.1_Policy_50000.npy", agent.pi)
+    numpy.save("Average_Policy_1000.npy", agent.pi)
 
 
 def test_policy(nb_episodes, agent):
@@ -272,9 +272,11 @@ def test_policy(nb_episodes, agent):
     print("Average: %d" % (sum(scores)/len(scores)))
 
 
-agent = FlappyAgentMCLearningRate(0.1)
-# run_game(50000, agent)
+
+
+agent = FlappyAgentMCAverage()
+#run_game(1000, agent)
 pi = numpy.load("Average_Policy_50000.npy").item()
 agent.pi = pi
-test_policy(30, agent)
+test_policy(100, agent)
 
