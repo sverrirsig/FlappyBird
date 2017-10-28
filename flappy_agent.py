@@ -4,6 +4,9 @@ import random
 import numpy
 import itertools
 import time
+import os
+import re
+import matplotlib.pyplot as plt
 
 class FlappyAgent:
     def __init__(self):
@@ -270,12 +273,35 @@ def test_policy(nb_episodes, agent):
             nb_episodes -= 1
 
     print("Best score: %d" % max(scores))
-    print("Average: %d" % (sum(scores)/len(scores)))
+    print("Average: %f" % (sum(scores)/len(scores)))
+    return max(scores), (sum(scores)/len(scores))
 
 
-agent = FlappyAgentMCLearningRate(0.1)
-run_game(3000, agent)
+def iterate_policies(folder):
+    directory = os.fsencode(folder)
+    episodes = []
+    scores = []
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        filename = folder + "/" + filename
+        agent = FlappyAgentMCLearningRate(0.1)
+        agent.pi = numpy.load(filename).item()
+        episode = re.findall('\d+', filename)[0]
+        max_score, average = test_policy(30, agent)
+        episodes.append(episode)
+        scores.append(average)
+    print(episodes)
+    print(scores)
+    plt.plot(episodes, scores)
+    plt.show()
+
+
+
+#agent = FlappyAgentMCLearningRate(0.1)
+#run_game(3000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
 # test_policy(2000, agent)
+
+iterate_policies("Monte_Carlo")
 
