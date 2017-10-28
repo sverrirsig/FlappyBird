@@ -316,7 +316,7 @@ def run_game(nb_episodes, agent):
         agent.observe(state, action, reward, state2, env.game_over())
         if frames % 50000 == 0:
             results = {"Frames": frames, "Policy": agent.pi}
-            numpy.save("Q_Learning/LR_Frames_" + str(frames) + ".npy", results)
+            numpy.save("Monte_Carlo/LR_Frames_" + str(frames) + ".npy", results)
         score += reward
         scores = set()
         if env.game_over():
@@ -380,8 +380,8 @@ def iterate_policies(folder, name, total, step):
 
 
 
-agent = FlappyAgentQLearningLearningRate(0.1)
-run_game(20000, agent)
+agent = FlappyAgentMCLearningRate(0.1)
+run_game(100000, agent)
 #pi = numpy.load("Q_Learning/LR_Frames_564.npy").item()
 #agent.pi = pi
 #test_policy(1, agent)
