@@ -251,7 +251,7 @@ def run_game(nb_episodes, agent):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     scores = []
@@ -277,22 +277,25 @@ def test_policy(nb_episodes, agent):
     return max(scores), (sum(scores)/len(scores))
 
 
-def iterate_policies(folder):
+def iterate_policies(folder, name, total, step):
     directory = os.fsencode(folder)
     episodes = []
     scores = []
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        filename = folder + "/" + filename
+    files = []
+
+    for episode in range(step, total+1, step):
+        file = folder + name + str(episode) + ".npy"
+        print(file)
         agent = FlappyAgentMCLearningRate(0.1)
-        agent.pi = numpy.load(filename).item()
-        episode = re.findall('\d+', filename)[0]
+        agent.pi = numpy.load(file).item()
         max_score, average = test_policy(30, agent)
         episodes.append(episode)
         scores.append(average)
     print(episodes)
     print(scores)
+    plt.figure(figsize=(20, 10))
     plt.plot(episodes, scores)
+    plt.savefig("Monte_Carlo/" + name + ".png")
     plt.show()
 
 
@@ -303,5 +306,5 @@ def iterate_policies(folder):
 # agent.pi = pi
 # test_policy(2000, agent)
 
-iterate_policies("Monte_Carlo")
+iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
 
