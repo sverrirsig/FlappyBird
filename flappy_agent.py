@@ -243,7 +243,7 @@ def run_game(nb_episodes, agent):
             elapsed_episodes += 1
             print(elapsed_episodes)
             if elapsed_episodes % 1000 == 0:
-                numpy.save("Monte_Carlo/LR_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
+                numpy.save("Monte_Carlo_Average/Average_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
 
 
 def test_policy(nb_episodes, agent):
@@ -273,7 +273,7 @@ def test_policy(nb_episodes, agent):
     print("Average: %d" % (sum(scores)/len(scores)))
 
 
-agent = FlappyAgentMCLearningRate(0.1)
+agent = FlappyAgentMCAverage()
 run_game(50000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
