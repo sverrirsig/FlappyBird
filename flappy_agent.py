@@ -379,10 +379,10 @@ def iterate_policies(folder, name, total, step):
 
 
 agent = FlappyAgentQLearningLearningRate(0.1)
-run_game(3000, agent)
-# pi = numpy.load("Average_Policy_200000.npy").item()
-# agent.pi = pi
-#test_policy(2000, agent)
+#run_game(20000, agent)
+pi = numpy.load("Q_Learning/LR_Episodes20000.npy").item()
+agent.pi = pi
+test_policy(1000, agent)
 
 #iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
 
