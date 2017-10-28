@@ -221,7 +221,7 @@ class FlappyAgentMCLearningRate(FlappyAgent):
 def run_game(nb_episodes, agent):
     reward_values = agent.reward_values()
     
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=False, rng=None,
               reward_values=reward_values)
     env.init()
 
@@ -242,7 +242,7 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-    numpy.save("Average_Policy_1000.npy", agent.pi)
+    numpy.save("Lala.npy", agent.pi)
 
 
 def test_policy(nb_episodes, agent):
@@ -275,8 +275,8 @@ def test_policy(nb_episodes, agent):
 
 
 agent = FlappyAgentMCAverage()
-#run_game(1000, agent)
-pi = numpy.load("Average_Policy_50000.npy").item()
+#run_game(200000, agent)
+pi = numpy.load("Average_Policy_200000.npy").item()
 agent.pi = pi
-test_policy(100, agent)
+test_policy(2000, agent)
 
