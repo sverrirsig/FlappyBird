@@ -221,6 +221,90 @@ class FlappyAgentMCLearningRate(FlappyAgent):
 
         return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
 
+
+class FlappyAgentQLearningLearningRate(FlappyAgent):
+    def __init__(self, LearningRate):
+        super(FlappyAgentQLearningLearningRate, self).__init__()
+
+        self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
+        self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
+        self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)] # ToDo: Maybe refactor and make the first interval a bit bigger.
+
+        self.states = list(itertools.product(*[
+            self.y_pos_intervals,
+            self.top_y_gap_intervals,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.Q = {}
+        self.pi = {}
+        self.terminalState = (-1, -1, -1, -1)
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in range(0, 2):
+                self.Q[(state, action)] = 0
+                self.pi[state] = 0 if random.randint(0, 2) == 0 else 1
+
+        self.observations = []
+
+        self.discount = 1
+        self.epsilon = 0.1
+
+        self.learning_rate = LearningRate
+
+    def reward_values(self):
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
+
+    def observe(self, s1, a, r, end):
+        self.observations.append((s1, a, r))
+
+        s, a, r = self.observations[0]
+        counter = 1
+        for s_prime, a, r in self.observations[1:]:
+            self.Q[(s, a)] = self.Q[(s, a)] + self.learning_rate * (r + self.discount^counter * max(self.Q[(s_prime, a)]) - self.Q[(s, a)])
+            s_prime, action_prime, reward_prime = s, a, r
+            counter += 1
+
+        for (s, a, r) in self.observations:
+            if self.Q[(s, 0)] > self.Q[(s, 1)]:
+                self.pi[s] = 0
+            else:
+                self.pi[s] = 1
+
+        self.observations = []
+
+    def training_policy(self, state):
+        actions = [0, 1]
+
+        greedy_action = self.pi[state]
+
+        if random.uniform(0, 1) < 0.95:
+            return greedy_action
+        else:
+            return [x for x in actions if x != greedy_action][0]
+
+    def policy(self, state):
+        return self.pi[state]
+
+    # Gets a state in the original format that PyGame returns.
+    # Both extracts the 4 keys in the problem description
+    # And maps the value to the corresponding interval.
+    # Returns a tuple of:
+    # 1. the current y-position of the bird (player_y component of the game state)
+    # 2. the top y position of the next gap (next_pipe_top_y)
+    # 3. the horizontal distance between bird and next pipe (next_pipe_dist_to_player)
+    # 4. the current velocity of the bird (player_vel)
+    def parse_state(self, state):
+        y_pos = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
+        top_y_gap = min(self.top_y_gap_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x:abs(x - state['player_vel']))
+
+        return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
+
+
 def run_game(nb_episodes, agent):
     reward_values = agent.reward_values()
     
@@ -238,16 +322,18 @@ def run_game(nb_episodes, agent):
         agent.observe(state, action, reward, env.game_over())
 
         score += reward
-
+        scores = set()
         if env.game_over():
             #print("score for this episode: %d" % score)
+            scores.add(score)
             env.reset_game()
             score = 0
             elapsed_episodes += 1
-            print(elapsed_episodes)
-            if elapsed_episodes % 1000 == 0:
-                numpy.save("Monte_Carlo/LR_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
+            #print(elapsed_episodes)
+            #if elapsed_episodes % 1000 == 0:
+            #    numpy.save("Monte_Carlo/LR_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
 
+    print("BEST SCORE: %d" % max(scores))
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
@@ -304,7 +390,7 @@ def iterate_policies(folder, name, total, step):
 #run_game(3000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
-# test_policy(2000, agent)
+test_policy(2000, agent)
 
 iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
 
