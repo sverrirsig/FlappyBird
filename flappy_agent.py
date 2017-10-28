@@ -305,8 +305,10 @@ def run_game(nb_episodes, agent):
 
     elapsed_episodes = 0
     score = 0
+    frames = 0
     while elapsed_episodes < nb_episodes:
         state = agent.parse_state(env.game.getGameState())
+        frames += 1
         action = agent.training_policy(state)
         reward = env.act(env.getActionSet()[action])
         state2 = agent.parse_state(env.game.getGameState())
@@ -323,13 +325,13 @@ def run_game(nb_episodes, agent):
             elapsed_episodes += 1
             print(elapsed_episodes)
             if elapsed_episodes % 1000 == 0:
-                numpy.save("Q_Learning/LR_Episodes" + str(elapsed_episodes) + ".npy", agent.pi)
+                numpy.save("Q_Learning/LR_Episodes" + str(frames) + ".npy", agent.pi)
 
     print("BEST SCORE: %d" % max(scores))
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
     env.init()
     scores = []
@@ -337,7 +339,6 @@ def test_policy(nb_episodes, agent):
     while nb_episodes > 0:
 
         state = agent.parse_state(env.game.getGameState())
-
         action = agent.policy(state)
 
         reward = env.act(env.getActionSet()[action])
@@ -352,6 +353,7 @@ def test_policy(nb_episodes, agent):
 
     print("Best score: %d" % max(scores))
     print("Average: %f" % (sum(scores)/len(scores)))
+    print("Frames: %d" % frames)
     return max(scores), (sum(scores)/len(scores))
 
 
@@ -382,7 +384,9 @@ agent = FlappyAgentQLearningLearningRate(0.1)
 #run_game(20000, agent)
 pi = numpy.load("Q_Learning/LR_Episodes20000.npy").item()
 agent.pi = pi
-test_policy(1000, agent)
+test_policy(1, agent)
 
-iterate_policies("Monte_Carlo_Average/", "Average_Episodes_", 50000, 1000)
+
+
+#iterate_policies("Monte_Carlo_Average/", "Average_Episodes_", 50000, 1000)
 
