@@ -274,7 +274,7 @@ def test_policy(nb_episodes, agent):
 
 
 agent = FlappyAgentMCLearningRate(0.1)
-run_game(3000, agent)
+run_game(50000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
 # test_policy(2000, agent)
