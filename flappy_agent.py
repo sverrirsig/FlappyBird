@@ -143,6 +143,8 @@ class FlappyAgentMCAverage(FlappyAgent):
 
         return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
 
+
+# Flappy Agent that uses Monte-Carlo and a fixed learning rate.
 class FlappyAgentMCLearningRate(FlappyAgent):
     def __init__(self, LearningRate):
         super(FlappyAgentMCLearningRate, self).__init__()
@@ -332,7 +334,7 @@ def run_game(nb_episodes, agent):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     scores = []
@@ -358,35 +360,30 @@ def test_policy(nb_episodes, agent):
 
 
 def iterate_policies(folder, name, total, step):
-    directory = os.fsencode(folder)
     episodes = []
     scores = []
-    files = []
-
     for episode in range(step, total+1, step):
         file = folder + name + str(episode) + ".npy"
         print(file)
-        agent = FlappyAgentMCLearningRate(0.1)
-        agent.pi = numpy.load(file).item()
-        max_score, average = test_policy(30, agent)
+        agent_to_test = FlappyAgentQLearningLearningRate(0.1)
+        agent_to_test.pi = numpy.load(file).item()["Policy"]
+        max_score, average = test_policy(30, agent_to_test)
         episodes.append(episode)
         scores.append(average)
     print(episodes)
     print(scores)
     plt.figure(figsize=(20, 10))
     plt.plot(episodes, scores)
-    plt.savefig("Monte_Carlo/" + name + ".png")
+    plt.savefig("Q_Learning/" + name + ".png")
     plt.show()
 
 
-
-agent = FlappyAgentQLearningLearningRate(0.1)
-run_game(20000, agent)
+#agent = FlappyAgentQLearningLearningRate(0.1)
+#run_game(20000, agent)
 #pi = numpy.load("Q_Learning/LR_Frames_564.npy").item()
 #agent.pi = pi
 #test_policy(1, agent)
 
 
-
-#iterate_policies("Monte_Carlo_Average/", "Average_Episodes_", 50000, 1000)
+iterate_policies("Q_Learning/", "LR_Frames_", 2000000, 50000)
 
