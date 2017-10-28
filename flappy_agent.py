@@ -91,7 +91,7 @@ class FlappyAgentMCAverage(FlappyAgent):
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, end):
+    def observe(self, s1, a, r, s2, end):
         self.observations.append((s1, a, r))
         if end:
             G = 0
@@ -176,7 +176,7 @@ class FlappyAgentMCLearningRate(FlappyAgent):
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, end):
+    def observe(self, s1, a, r, s2, end):
         self.observations.append((s1, a, r))
         if end:
             G = 0
@@ -257,23 +257,14 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, end):
-        self.observations.append((s1, a, r))
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
 
-        s, a, r = self.observations[0]
-        counter = 1
-        for s_prime, a, r in self.observations[1:]:
-            self.Q[(s, a)] = self.Q[(s, a)] + self.learning_rate * (r + self.discount^counter * max(self.Q[(s_prime, a)]) - self.Q[(s, a)])
-            s_prime, action_prime, reward_prime = s, a, r
-            counter += 1
+        if self.Q[(s1, 0)] > self.Q[(s1, 1)]:
+            self.pi[s1] = 0
+        else:
+            self.pi[s1] = 1
 
-        for (s, a, r) in self.observations:
-            if self.Q[(s, 0)] > self.Q[(s, 1)]:
-                self.pi[s] = 0
-            else:
-                self.pi[s] = 1
-
-        self.observations = []
 
     def training_policy(self, state):
         actions = [0, 1]
@@ -318,8 +309,9 @@ def run_game(nb_episodes, agent):
         state = agent.parse_state(env.game.getGameState())
         action = agent.training_policy(state)
         reward = env.act(env.getActionSet()[action])
+        state2 = agent.parse_state(env.game.getGameState())
 
-        agent.observe(state, action, reward, env.game_over())
+        agent.observe(state, action, reward, state2, env.game_over())
 
         score += reward
         scores = set()
@@ -329,9 +321,9 @@ def run_game(nb_episodes, agent):
             env.reset_game()
             score = 0
             elapsed_episodes += 1
-            #print(elapsed_episodes)
-            #if elapsed_episodes % 1000 == 0:
-            #    numpy.save("Monte_Carlo/LR_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
+            print(elapsed_episodes)
+            if elapsed_episodes % 1000 == 0:
+                numpy.save("Q_Learning/LR_Episodes" + str(elapsed_episodes) + ".npy", agent.pi)
 
     print("BEST SCORE: %d" % max(scores))
 
@@ -386,11 +378,11 @@ def iterate_policies(folder, name, total, step):
 
 
 
-#agent = FlappyAgentMCLearningRate(0.1)
-#run_game(3000, agent)
+agent = FlappyAgentQLearningLearningRate(0.1)
+run_game(3000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
-test_policy(2000, agent)
+#test_policy(2000, agent)
 
-iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
+#iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
 
