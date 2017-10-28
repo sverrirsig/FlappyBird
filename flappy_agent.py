@@ -318,7 +318,7 @@ def run_game(nb_episodes, agent):
         agent.observe(state, action, reward, state2, env.game_over())
         if frames % 50000 == 0:
             results = {"Frames": frames, "Policy": agent.pi}
-            numpy.save("Q_Learning/LR_Frames_" + str(frames) + ".npy", results)
+            numpy.save("Monte_Carlo/LR_Frames_" + str(frames) + ".npy", results)
         score += reward
         scores = set()
         if env.game_over():
