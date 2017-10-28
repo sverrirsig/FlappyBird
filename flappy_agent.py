@@ -384,5 +384,5 @@ pi = numpy.load("Q_Learning/LR_Episodes20000.npy").item()
 agent.pi = pi
 test_policy(1000, agent)
 
-#iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
+iterate_policies("Monte_Carlo_Average/", "Average_Episodes_", 50000, 1000)
 
