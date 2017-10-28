@@ -4,6 +4,9 @@ import random
 import numpy
 import itertools
 import time
+import os
+import re
+import matplotlib.pyplot as plt
 
 class FlappyAgent:
     def __init__(self):
@@ -88,7 +91,7 @@ class FlappyAgentMCAverage(FlappyAgent):
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, end):
+    def observe(self, s1, a, r, s2, end):
         self.observations.append((s1, a, r))
         if end:
             G = 0
@@ -173,7 +176,7 @@ class FlappyAgentMCLearningRate(FlappyAgent):
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def observe(self, s1, a, r, end):
+    def observe(self, s1, a, r, s2, end):
         self.observations.append((s1, a, r))
         if end:
             G = 0
@@ -218,6 +221,81 @@ class FlappyAgentMCLearningRate(FlappyAgent):
 
         return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
 
+
+class FlappyAgentQLearningLearningRate(FlappyAgent):
+    def __init__(self, LearningRate):
+        super(FlappyAgentQLearningLearningRate, self).__init__()
+
+        self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
+        self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
+        self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)] # ToDo: Maybe refactor and make the first interval a bit bigger.
+
+        self.states = list(itertools.product(*[
+            self.y_pos_intervals,
+            self.top_y_gap_intervals,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.Q = {}
+        self.pi = {}
+        self.terminalState = (-1, -1, -1, -1)
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in range(0, 2):
+                self.Q[(state, action)] = 0
+                self.pi[state] = 0 if random.randint(0, 2) == 0 else 1
+
+        self.observations = []
+
+        self.discount = 1
+        self.epsilon = 0.1
+
+        self.learning_rate = LearningRate
+
+    def reward_values(self):
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        if self.Q[(s1, 0)] > self.Q[(s1, 1)]:
+            self.pi[s1] = 0
+        else:
+            self.pi[s1] = 1
+
+
+    def training_policy(self, state):
+        actions = [0, 1]
+
+        greedy_action = self.pi[state]
+
+        if random.uniform(0, 1) < 0.95:
+            return greedy_action
+        else:
+            return [x for x in actions if x != greedy_action][0]
+
+    def policy(self, state):
+        return self.pi[state]
+
+    # Gets a state in the original format that PyGame returns.
+    # Both extracts the 4 keys in the problem description
+    # And maps the value to the corresponding interval.
+    # Returns a tuple of:
+    # 1. the current y-position of the bird (player_y component of the game state)
+    # 2. the top y position of the next gap (next_pipe_top_y)
+    # 3. the horizontal distance between bird and next pipe (next_pipe_dist_to_player)
+    # 4. the current velocity of the bird (player_vel)
+    def parse_state(self, state):
+        y_pos = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
+        top_y_gap = min(self.top_y_gap_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x:abs(x - state['player_vel']))
+
+        return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
+
+
 def run_game(nb_episodes, agent):
     reward_values = agent.reward_values()
     
@@ -231,24 +309,27 @@ def run_game(nb_episodes, agent):
         state = agent.parse_state(env.game.getGameState())
         action = agent.training_policy(state)
         reward = env.act(env.getActionSet()[action])
+        state2 = agent.parse_state(env.game.getGameState())
 
-        agent.observe(state, action, reward, env.game_over())
+        agent.observe(state, action, reward, state2, env.game_over())
 
         score += reward
-
+        scores = set()
         if env.game_over():
             #print("score for this episode: %d" % score)
+            scores.add(score)
             env.reset_game()
             score = 0
             elapsed_episodes += 1
             print(elapsed_episodes)
             if elapsed_episodes % 1000 == 0:
-                numpy.save("Monte_Carlo_Average/Average_Episodes_" + str(elapsed_episodes) + ".npy", agent.pi)
+                numpy.save("Q_Learning/LR_Episodes" + str(elapsed_episodes) + ".npy", agent.pi)
 
+    print("BEST SCORE: %d" % max(scores))
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     scores = []
@@ -270,12 +351,38 @@ def test_policy(nb_episodes, agent):
             nb_episodes -= 1
 
     print("Best score: %d" % max(scores))
-    print("Average: %d" % (sum(scores)/len(scores)))
+    print("Average: %f" % (sum(scores)/len(scores)))
+    return max(scores), (sum(scores)/len(scores))
 
 
-agent = FlappyAgentMCAverage()
-run_game(50000, agent)
+def iterate_policies(folder, name, total, step):
+    directory = os.fsencode(folder)
+    episodes = []
+    scores = []
+    files = []
+
+    for episode in range(step, total+1, step):
+        file = folder + name + str(episode) + ".npy"
+        print(file)
+        agent = FlappyAgentMCLearningRate(0.1)
+        agent.pi = numpy.load(file).item()
+        max_score, average = test_policy(30, agent)
+        episodes.append(episode)
+        scores.append(average)
+    print(episodes)
+    print(scores)
+    plt.figure(figsize=(20, 10))
+    plt.plot(episodes, scores)
+    plt.savefig("Monte_Carlo/" + name + ".png")
+    plt.show()
+
+
+
+agent = FlappyAgentQLearningLearningRate(0.1)
+run_game(3000, agent)
 # pi = numpy.load("Average_Policy_200000.npy").item()
 # agent.pi = pi
-# test_policy(2000, agent)
+#test_policy(2000, agent)
+
+#iterate_policies("Monte_Carlo/", "LR_Episodes_", 50000, 1000)
 
