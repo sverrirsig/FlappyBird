@@ -7,6 +7,8 @@ import time
 import os
 import re
 import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 class FlappyAgent:
     def __init__(self):
@@ -356,22 +358,30 @@ def test_policy(nb_episodes, agent):
 
     print("Best score: %d" % max(scores))
     print("Average: %f" % (sum(scores)/len(scores)))
-    return max(scores), (sum(scores)/len(scores))
+    #return max(scores), (sum(scores)/len(scores))
+    return scores
 
 
 def iterate_policies(folder, name, total, step):
     frames = []
     average_scores = []
     max_scores = []
+    #scores = []
     for frame in range(step, total+1, step):
         file = folder + name + str(frame) + ".npy"
         print(file)
         agent_to_test = FlappyAgentQLearningLearningRate(0.1)
         agent_to_test.pi = numpy.load(file).item()["Policy"]
-        max_score, average = test_policy(50, agent_to_test)
+        max_score, average = test_policy(4, agent_to_test)
+        #score = test_policy(50, agent_to_test)
+        #frame = str(frame)[:-3] + "k"
         frames.append(frame)
+        #scores.append(score)
         average_scores.append(average)
         max_scores.append(max_score)
+
+    #frames = frames[1::2]
+    #scores = scores[1::2]
     plt.figure(figsize=(20, 10))
     plt.title(folder)
     plt.xlabel("Frames trained on")
@@ -379,7 +389,8 @@ def iterate_policies(folder, name, total, step):
     average_line, = plt.plot(frames, average_scores, label="Average")
     max_line, = plt.plot(frames, max_scores, label="Max")
     plt.legend(handles=[average_line, max_line])
-    plt.savefig(folder + name + ".png")
+    #sns.boxplot(x=frames, y=scores)
+    plt.savefig(folder + name + "_boxplot" + ".png")
     plt.show()
 
 
@@ -391,4 +402,5 @@ def iterate_policies(folder, name, total, step):
 
 
 iterate_policies("Q_Learning/", "LR_Frames_", 2000000, 50000)
+
 
