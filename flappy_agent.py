@@ -152,7 +152,7 @@ class FlappyAgentMCLearningRate(FlappyAgent):
         self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
         self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)] # ToDo: Maybe refactor and make the first interval a bit bigger.
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
 
         self.states = list(itertools.product(*[
             self.y_pos_intervals,
@@ -216,10 +216,10 @@ class FlappyAgentMCLearningRate(FlappyAgent):
     # 3. the horizontal distance between bird and next pipe (next_pipe_dist_to_player)
     # 4. the current velocity of the bird (player_vel)
     def parse_state(self, state):
-        y_pos = min(self.y_pos_intervals, key=lambda x:abs(x - state['player_y']))
-        top_y_gap = min(self.top_y_gap_intervals, key=lambda x:abs(x - state['next_pipe_top_y']))
-        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe, key=lambda x:abs(x - state['next_pipe_dist_to_player']))
-        velocity = min(self.velocity_intervals, key=lambda x:abs(x - state['player_vel']))
+        y_pos = min(self.y_pos_intervals, key=lambda x: abs(x - state['player_y']))
+        top_y_gap = min(self.top_y_gap_intervals, key=lambda x: abs(x - state['next_pipe_top_y']))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe, key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
 
         return y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
 
@@ -231,7 +231,7 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
         self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
         self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)] # ToDo: Maybe refactor and make the first interval a bit bigger.
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
 
         self.states = list(itertools.product(*[
             self.y_pos_intervals,
@@ -360,21 +360,26 @@ def test_policy(nb_episodes, agent):
 
 
 def iterate_policies(folder, name, total, step):
-    episodes = []
-    scores = []
-    for episode in range(step, total+1, step):
-        file = folder + name + str(episode) + ".npy"
+    frames = []
+    average_scores = []
+    max_scores = []
+    for frame in range(step, total+1, step):
+        file = folder + name + str(frame) + ".npy"
         print(file)
         agent_to_test = FlappyAgentQLearningLearningRate(0.1)
         agent_to_test.pi = numpy.load(file).item()["Policy"]
-        max_score, average = test_policy(30, agent_to_test)
-        episodes.append(episode)
-        scores.append(average)
-    print(episodes)
-    print(scores)
+        max_score, average = test_policy(50, agent_to_test)
+        frames.append(frame)
+        average_scores.append(average)
+        max_scores.append(max_score)
     plt.figure(figsize=(20, 10))
-    plt.plot(episodes, scores)
-    plt.savefig("Q_Learning/" + name + ".png")
+    plt.title(folder)
+    plt.xlabel("Frames trained on")
+    plt.ylabel("Score, 50 runs")
+    average_line, = plt.plot(frames, average_scores, label="Average")
+    max_line, = plt.plot(frames, max_scores, label="Max")
+    plt.legend(handles=[average_line, max_line])
+    plt.savefig(folder + name + ".png")
     plt.show()
 
 
