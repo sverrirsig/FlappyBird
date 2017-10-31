@@ -5,6 +5,7 @@ import numpy
 import itertools
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 
 class FlappyAgent:
@@ -28,7 +29,6 @@ class FlappyAgent:
             self.pi[state] = random.randint(0, 1)
             for action in self.actions:
                 self.Q[(state, action)] = 0
-                self.pi[state] = 0 if random.randint(0, 2) == 0 else 1
 
         self.observations = []
 
@@ -75,12 +75,15 @@ class FlappyAgent:
 
 
 class FlappyAgentMCAverage(FlappyAgent):
-    def __init__(self):
+    def __init__(self, epsilon=0.1, discount=1):
         super(FlappyAgentMCAverage, self).__init__()
 
-        self.discount = 1
-        self.epsilon = 0.1
+        self.discount = discount
+        self.epsilon = epsilon
         self.method = "Monte_Carlo_Average"
+        for state in self.states:
+            for action in self.actions:
+                self.Q[(state, action)] = (0, 0)
 
     def observe(self, s1, a, r, s2, end):
         self.observations.append((s1, a, r))
@@ -98,7 +101,7 @@ class FlappyAgentMCAverage(FlappyAgent):
                 self.Q[(s, a)] = (new_average, new_count)
 
             for (s, a, r) in reversed(self.observations):
-                if self.Q[(s, 0)] > self.Q[(s, 1)]:
+                if self.Q[(s, 0)] > self.Q[(s, 1)]:  # Todo: Hmmmmmmm smá steikt
                     self.pi[s] = 0
                 else:
                     self.pi[s] = 1
@@ -108,11 +111,11 @@ class FlappyAgentMCAverage(FlappyAgent):
 
 # Flappy Agent that uses Monte-Carlo and a fixed learning rate.
 class FlappyAgentMCLearningRate(FlappyAgent):
-    def __init__(self, LearningRate):
+    def __init__(self, LearningRate=0.1, epsilon=0.1, discount=1):
         super(FlappyAgentMCLearningRate, self).__init__()
 
-        self.discount = 1
-        self.epsilon = 0.1
+        self.discount = discount
+        self.epsilon = epsilon
         self.learning_rate = LearningRate
         self.method = "Monte_Carlo_Learning_Rate"
 
@@ -134,11 +137,11 @@ class FlappyAgentMCLearningRate(FlappyAgent):
 
 
 class FlappyAgentQLearningLearningRate(FlappyAgent):
-    def __init__(self, LearningRate):
+    def __init__(self, LearningRate=0.1, epsilon=0.1, discount=1):
         super(FlappyAgentQLearningLearningRate, self).__init__()
 
-        self.discount = 1
-        self.epsilon = 0.1
+        self.discount = discount
+        self.epsilon = epsilon
         self.learning_rate = LearningRate
         self.method = "Q_Learning"
 
@@ -148,13 +151,42 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
         self.update_policy(s1)
 
 
+# class FlappyAgentQLearningAverage(FlappyAgent):
+#     def __init__(self, epsilon=0.1, discount=1):
+#         super(FlappyAgentQLearningAverage, self).__init__()
+#
+#         self.discount = discount
+#         self.epsilon = epsilon
+#         self.method = "Q_Learning"
+#         for state in self.states:
+#             for action in self.actions:
+#                 self.Q[(state, action)] = (0, 0)
+#
+#     def observe(self, s1, a, r, s2, end):
+#         old_average = self.Q[(s1, a)][0]
+#         old_count = self.Q[(s1, a)][1]
+#         total = old_count * old_average
+#
+#         new_count = old_count + 1
+#
+#
+#
+#         self.Q[(s1, a)] = self.Q[(s1, a)] + 1/new_count * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+#
+#         self.update_policy(s1)
+
+
 def save_policy(agent, frames, folder=""):
     results = {"Frames": frames, "Policy": agent.pi}
-    numpy.save(folder + agent.method + "_" + str(frames) + ".npy", results)
+    separator = ""
+    if len(folder) > 0 and not os.path.exists(folder):
+        os.makedirs(folder)
+        separator = "/"
+    numpy.save(folder + separator + agent.method + "_" + str(frames) + ".npy", results)
     print("Saved %s agents policy after training %d frames." % (agent.method, frames))
 
 
-def run_game(nb_episodes, agent, frames_to_train=200000, folder=""):
+def run_game(nb_episodes, agent, frames_to_train=2000000, folder=""):
     reward_values = agent.reward_values()
     
     env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
@@ -173,14 +205,12 @@ def run_game(nb_episodes, agent, frames_to_train=200000, folder=""):
         agent.observe(state, action, reward, state2, env.game_over())
 
         frames += 1
-        # if frames % 50000 == 0:
-            # save_policy(agent, frames, folder)
+        if frames % 50000 == 0:
+            save_policy(agent, frames, folder)
         score += reward
         if env.game_over():
             env.reset_game()
             elapsed_episodes += 1
-            #print(elapsed_episodes)
-            print(score)
             score = 0
             if frames >= frames_to_train:
                 save_policy(agent, frames, folder)
@@ -254,8 +284,9 @@ def evaluate_policies(folder, name, total, step):
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-bird = FlappyAgentQLearningLearningRate(0.1)
-run_game(20000, bird, 10000)
+for rate in [0.001, 0.01, 0.05, 0.1, 0.5]:
+    bird = FlappyAgentQLearningLearningRate(LearningRate=rate)
+    run_game(20000, bird, 2000000, "rate_" + str(rate))
 #bird.pi = numpy.load("Q_Learning_10024.npy").item()["Policy"]
 #test_policy(10, bird)
 
