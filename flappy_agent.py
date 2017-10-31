@@ -50,8 +50,14 @@ class FlappyAgent:
     def policy(self, state):
         return self.pi[state]
 
-    def update_policy(self, s1):
+    def update_policy_fixed(self, s1):
         if self.Q[(s1, 0)] > self.Q[(s1, 1)]:
+            self.pi[s1] = 0
+        else:
+            self.pi[s1] = 1
+
+    def update_policy_average(self, s1):
+        if self.Q[(s1, 0)][0] > self.Q[(s1, 1)][0]:
             self.pi[s1] = 0
         else:
             self.pi[s1] = 1
@@ -101,10 +107,7 @@ class FlappyAgentMCAverage(FlappyAgent):
                 self.Q[(s, a)] = (new_average, new_count)
 
             for (s, a, r) in reversed(self.observations):
-                if self.Q[(s, 0)] > self.Q[(s, 1)]:  # Todo: Hmmmmmmm smá steikt
-                    self.pi[s] = 0
-                else:
-                    self.pi[s] = 1
+                self.update_policy_average(s)
 
             self.observations = []
 
@@ -128,10 +131,7 @@ class FlappyAgentMCLearningRate(FlappyAgent):
                 self.Q[(s, a)] = self.Q[(s, a)] + self.learning_rate * (G - self.Q[(s, a)])
 
             for (s, a, r) in reversed(self.observations):
-                if self.Q[(s, 0)] > self.Q[(s, 1)]:
-                    self.pi[s] = 0
-                else:
-                    self.pi[s] = 1
+                self.update_policy_fixed(s)
 
             self.observations = []
 
@@ -148,40 +148,38 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
     def observe(self, s1, a, r, s2, end):
         self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
 
-        self.update_policy(s1)
+        self.update_policy_fixed(s1)
 
 
-# class FlappyAgentQLearningAverage(FlappyAgent):
-#     def __init__(self, epsilon=0.1, discount=1):
-#         super(FlappyAgentQLearningAverage, self).__init__()
-#
-#         self.discount = discount
-#         self.epsilon = epsilon
-#         self.method = "Q_Learning"
-#         for state in self.states:
-#             for action in self.actions:
-#                 self.Q[(state, action)] = (0, 0)
-#
-#     def observe(self, s1, a, r, s2, end):
-#         old_average = self.Q[(s1, a)][0]
-#         old_count = self.Q[(s1, a)][1]
-#         total = old_count * old_average
-#
-#         new_count = old_count + 1
-#
-#
-#
-#         self.Q[(s1, a)] = self.Q[(s1, a)] + 1/new_count * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
-#
-#         self.update_policy(s1)
+class FlappyAgentQLearningAverage(FlappyAgent):
+    def __init__(self, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningAverage, self).__init__()
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.method = "Q_Learning"
+        for state in self.states:
+            for action in self.actions:
+                self.Q[(state, action)] = (0, 0)
+
+    def observe(self, s1, a, r, s2, end):
+        new_count = self.Q[(s1, a)][1]
+        new_count += 1
+        new_val = self.Q[(s1, a)][0]
+        new_val = new_val + 1/new_count * (r + self.discount * self.Q[(s2, self.pi[s2])][0] - self.Q[(s1, a)][0])
+        self.Q[(s1, a)] = (new_val, new_count)
+
+        self.update_policy_average(s1)
+
 
 
 def save_policy(agent, frames, folder=""):
     results = {"Frames": frames, "Policy": agent.pi}
     separator = ""
+    if len(folder) > 0:
+        separator = "/"
     if len(folder) > 0 and not os.path.exists(folder):
         os.makedirs(folder)
-        separator = "/"
     numpy.save(folder + separator + agent.method + "_" + str(frames) + ".npy", results)
     print("Saved %s agents policy after training %d frames." % (agent.method, frames))
 
@@ -265,30 +263,42 @@ def generate_box_plot(folder, name, scores, frames):
     plt.savefig(folder + name + "box_plot" + ".png")
 
 
-def evaluate_policies(folder, name, total, step):
+def evaluate_policies(agent_to_test, folder, name, total, step):
     frames = []
     average_scores = []
     max_scores = []
     scores = []
     for frame in range(step, total+1, step):
         file = folder + name + str(frame) + ".npy"
-        agent_to_test = FlappyAgentQLearningLearningRate(0.1)
-        agent_to_test.pi = numpy.load(file).item()["Policy"]
+        try:
+            agent_to_test.pi = numpy.load(file).item()["Policy"]
+        except FileNotFoundError:
+            break
         max_score, average, score = test_policy(50, agent_to_test)
         frames.append(frame)
         scores.append(score)
         average_scores.append(average)
         max_scores.append(max_score)
 
-    generate_box_plot(folder, name, scores, frames)
+    #generate_box_plot(folder, name, scores, frames)
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-for rate in [0.001, 0.01, 0.05, 0.1, 0.5]:
-    bird = FlappyAgentQLearningLearningRate(LearningRate=rate)
-    run_game(20000, bird, 2000000, "rate_" + str(rate))
+# for rate in [0.11, 0.13, 0.15]:
+#     bird = FlappyAgentQLearningLearningRate(LearningRate=rate)
+#     run_game(200000, bird, 2000000, "rate_" + str(rate))
+
+# bird = FlappyAgentQLearningAverage()
+# run_game(200000, bird, 2000000, "Q_average")
+
+
+bird = FlappyAgentQLearningAverage()
+evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
+# bird = FlappyAgentQLearningLearningRate(LearningRate=0.13)
+# evaluate_policies(bird, "rate_0.13/", "Q_Learning_", 2000000, 50000)
+# bird = FlappyAgentQLearningLearningRate(LearningRate=0.15)
+# evaluate_policies(bird, "rate_0.15/", "Q_Learning_", 2000000, 50000)
+
+
 #bird.pi = numpy.load("Q_Learning_10024.npy").item()["Policy"]
 #test_policy(10, bird)
-
-
-#evaluate_policies("MC_SET/", "LR_Frames_", 2000000, 50000)
