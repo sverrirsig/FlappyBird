@@ -292,6 +292,7 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
         try:
             agent_to_test.pi = numpy.load(file).item()["Policy"]
         except FileNotFoundError:
+            print("Rakki")
             break
         max_score, average, score = test_policy(50, agent_to_test)
         frames.append(frame)
@@ -303,21 +304,32 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-for disc in [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.5]:
-    bird = FlappyAgentQLearningElite(discount=disc)
-    run_game(bird, 0, 2000000, "discount_" + str(disc))
+# for disc in [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.5]:
+#     bird = FlappyAgentQLearningElite(discount=disc)
+#     run_game(bird, 0, 2000000, "discount_" + str(disc))
 
 # bird = FlappyAgentQLearningAverage()
 # run_game(200000, bird, 2000000, "Q_average")
 
 
 
-#evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
-# bird = FlappyAgentQLearningLearningRate(LearningRate=0.13)
-# evaluate_policies(bird, "rate_0.13/", "Q_Learning_", 2000000, 50000)
-# bird = FlappyAgentQLearningLearningRate(LearningRate=0.15)
-# evaluate_policies(bird, "rate_0.15/", "Q_Learning_", 2000000, 50000)
+# evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
 
+
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.5)
+evaluate_policies(bird, "discount_0.5/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.75)
+evaluate_policies(bird, "discount_0.75/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.8)
+evaluate_policies(bird, "discount_0.8/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.85)
+evaluate_policies(bird, "discount_0.85/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.9)
+evaluate_policies(bird, "discount_0.9/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.95)
+evaluate_policies(bird, "discount_0.95/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=1)
+evaluate_policies(bird, "discount_1/", "Q_Learning_Elite_", 2000000, 50000)
 
 #bird.pi = numpy.load("Q_Learning_10024.npy").item()["Policy"]
 #test_policy(10, bird)
