@@ -142,8 +142,8 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
 
         self.discount = discount
         self.epsilon = epsilon
-        self.learning_rate = LearningRate
-        self.method = "Q_Learning"
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Fixed"
 
     def observe(self, s1, a, r, s2, end):
         self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
@@ -157,7 +157,7 @@ class FlappyAgentQLearningAverage(FlappyAgent):
 
         self.discount = discount
         self.epsilon = epsilon
-        self.method = "Q_Learning"
+        self.method = "Q_Learning_Average"
         for state in self.states:
             for action in self.actions:
                 self.Q[(state, action)] = (0, 0)
@@ -172,6 +172,20 @@ class FlappyAgentQLearningAverage(FlappyAgent):
         self.update_policy_average(s1)
 
 
+class FlappyAgentQLearningElite(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElite, self).__init__()
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
 
 def save_policy(agent, frames, folder=""):
     results = {"Frames": frames, "Policy": agent.pi}
@@ -184,7 +198,7 @@ def save_policy(agent, frames, folder=""):
     print("Saved %s agents policy after training %d frames." % (agent.method, frames))
 
 
-def run_game(nb_episodes, agent, frames_to_train=2000000, folder=""):
+def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
     reward_values = agent.reward_values()
     
     env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
@@ -194,7 +208,7 @@ def run_game(nb_episodes, agent, frames_to_train=2000000, folder=""):
     elapsed_episodes = 0
     frames = 0
     score = 0
-    while elapsed_episodes < nb_episodes:
+    while True:
         state = agent.parse_state(env.game.getGameState())
         action = agent.training_policy(state)
         reward = env.act(env.getActionSet()[action])
@@ -210,7 +224,10 @@ def run_game(nb_episodes, agent, frames_to_train=2000000, folder=""):
             env.reset_game()
             elapsed_episodes += 1
             score = 0
-            if frames >= frames_to_train:
+            if frames_to_train != 0 and frames >= frames_to_train:
+                save_policy(agent, frames, folder)
+                break
+            if nb_episodes != 0 and elapsed_episodes >= nb_episodes:
                 save_policy(agent, frames, folder)
                 break
 
@@ -220,6 +237,8 @@ def test_policy(nb_episodes, agent):
     env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
+    print("Playing game as %s" % bird.method)
+
     scores = []
     score = 0
     while nb_episodes > 0:
@@ -284,16 +303,16 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-# for rate in [0.11, 0.13, 0.15]:
-#     bird = FlappyAgentQLearningLearningRate(LearningRate=rate)
-#     run_game(200000, bird, 2000000, "rate_" + str(rate))
+for disc in [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.5]:
+    bird = FlappyAgentQLearningElite(discount=disc)
+    run_game(bird, 0, 2000000, "discount_" + str(disc))
 
 # bird = FlappyAgentQLearningAverage()
 # run_game(200000, bird, 2000000, "Q_average")
 
 
-bird = FlappyAgentQLearningAverage()
-evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
+
+#evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
 # bird = FlappyAgentQLearningLearningRate(LearningRate=0.13)
 # evaluate_policies(bird, "rate_0.13/", "Q_Learning_", 2000000, 50000)
 # bird = FlappyAgentQLearningLearningRate(LearningRate=0.15)
