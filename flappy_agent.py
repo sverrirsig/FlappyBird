@@ -234,12 +234,13 @@ def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     print("Playing game as %s" % bird.method)
 
     scores = []
+    score = 0
     score = 0
     while nb_episodes > 0:
         state = agent.parse_state(env.game.getGameState())
@@ -304,32 +305,37 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-# for disc in [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.5]:
-#     bird = FlappyAgentQLearningElite(discount=disc)
-#     run_game(bird, 0, 2000000, "discount_" + str(disc))
+for rate in [0.105, 0.11, 0.115, 0.12]:
+    bird = FlappyAgentQLearningElite(LearningRate=rate)
+    run_game(bird, 0, 2000000, "epsilon_" + str(rate))
 
-# bird = FlappyAgentQLearningAverage()
+# for epsi in [0.15]:
+#     bird = FlappyAgentQLearningElite(epsilon=epsi)
+#     run_game(bird, 0, 2000000, "epsilon_" + str(epsi))
+#
+# for epsi in [0.3]:
+#     bird = FlappyAgentQLearningElite(epsilon=epsi)
+#     run_game(bird, 0, 2000000, "epsilon_" + str(epsi))
+# #
+# for epsi in [0.5, 1]:
+#     bird = FlappyAgentQLearningElite(epsilon=epsi)
+#     run_game(bird, 0, 2000000, "epsilon_" + str(epsi))
+
+
 # run_game(200000, bird, 2000000, "Q_average")
 
 
-
 # evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
+#
+#
+# bird = FlappyAgentQLearningElite()
+# evaluate_policies(bird, "epsilon_0.1/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.01/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.2/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.3/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.4/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.5/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.05/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_0.15/", "Q_Learning_Elite_", 2000000, 50000)
+# evaluate_policies(bird, "epsilon_1/", "Q_Learning_Elite_", 2000000, 50000)
 
-
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.5)
-evaluate_policies(bird, "discount_0.5/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.75)
-evaluate_policies(bird, "discount_0.75/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.8)
-evaluate_policies(bird, "discount_0.8/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.85)
-evaluate_policies(bird, "discount_0.85/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.9)
-evaluate_policies(bird, "discount_0.9/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=0.95)
-evaluate_policies(bird, "discount_0.95/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningLearningRate(LearningRate=0.11, discount=1)
-evaluate_policies(bird, "discount_1/", "Q_Learning_Elite_", 2000000, 50000)
-
-#bird.pi = numpy.load("Q_Learning_10024.npy").item()["Policy"]
-#test_policy(10, bird)
