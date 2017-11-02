@@ -1,0 +1,2 @@
+self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(1, 150)), 9)]
+        self.horizontal_distance_next_pipe += [283]
