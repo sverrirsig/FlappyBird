@@ -234,7 +234,7 @@ def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     print("Playing game as %s" % bird.method)
@@ -305,9 +305,17 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
-for rate in [0.105, 0.11, 0.115, 0.12]:
-    bird = FlappyAgentQLearningElite(LearningRate=rate)
-    run_game(bird, 0, 2000000, "epsilon_" + str(rate))
+# for rate in [0.105]:
+#     bird = FlappyAgentQLearningElite(LearningRate=rate)
+#     run_game(bird, 0, 2000000, "rate_" + str(rate))
+
+# for rate in [0.115]:
+#     bird = FlappyAgentQLearningElite(LearningRate=rate)
+#     run_game(bird, 0, 2000000, "rate_" + str(rate))
+#
+# for rate in [0.12]:
+#     bird = FlappyAgentQLearningElite(LearningRate=rate)
+#     run_game(bird, 0, 2000000, "rate_" + str(rate))
 
 # for epsi in [0.15]:
 #     bird = FlappyAgentQLearningElite(epsilon=epsi)
@@ -328,10 +336,10 @@ for rate in [0.105, 0.11, 0.115, 0.12]:
 # evaluate_policies(bird, "Q_average/", "Q_Learning_", 2000000, 50000)
 #
 #
-# bird = FlappyAgentQLearningElite()
-# evaluate_policies(bird, "epsilon_0.1/", "Q_Learning_Elite_", 2000000, 50000)
-# evaluate_policies(bird, "epsilon_0.01/", "Q_Learning_Elite_", 2000000, 50000)
-# evaluate_policies(bird, "epsilon_0.2/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningElite()
+evaluate_policies(bird, "rate_0.105/", "Q_Learning_Elite_", 2000000, 50000)
+evaluate_policies(bird, "rate_0.115/", "Q_Learning_Elite_", 2000000, 50000)
+evaluate_policies(bird, "rate_0.12/", "Q_Learning_Elite_", 2000000, 50000)
 # evaluate_policies(bird, "epsilon_0.3/", "Q_Learning_Elite_", 2000000, 50000)
 # evaluate_policies(bird, "epsilon_0.4/", "Q_Learning_Elite_", 2000000, 50000)
 # evaluate_policies(bird, "epsilon_0.5/", "Q_Learning_Elite_", 2000000, 50000)
