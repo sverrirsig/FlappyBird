@@ -34,7 +34,7 @@ class FlappyAgent:
 
     def reward_values(self):
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
-    
+
     def observe(self, s1, a, r, s2, end):
         print("Observe should be overwritten!")
         return
@@ -102,7 +102,7 @@ class FlappyAgentMCAverage(FlappyAgent):
                 total = old_count * old_average
 
                 new_count = old_count + 1
-                new_average = (total+G) / new_count
+                new_average = (total + G) / new_count
 
                 self.Q[(s, a)] = (new_average, new_count)
 
@@ -146,7 +146,8 @@ class FlappyAgentQLearningLearningRate(FlappyAgent):
         self.method = "Q_Learning_Fixed"
 
     def observe(self, s1, a, r, s2, end):
-        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+        r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
 
         self.update_policy_fixed(s1)
 
@@ -166,7 +167,7 @@ class FlappyAgentQLearningAverage(FlappyAgent):
         new_count = self.Q[(s1, a)][1]
         new_count += 1
         new_val = self.Q[(s1, a)][0]
-        new_val = new_val + 1/new_count * (r + self.discount * self.Q[(s2, self.pi[s2])][0] - self.Q[(s1, a)][0])
+        new_val = new_val + 1 / new_count * (r + self.discount * self.Q[(s2, self.pi[s2])][0] - self.Q[(s1, a)][0])
         self.Q[(s1, a)] = (new_val, new_count)
 
         self.update_policy_average(s1)
@@ -185,7 +186,7 @@ def save_policy(agent, frames, folder=""):
 
 def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
     reward_values = agent.reward_values()
-    
+
     env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
@@ -208,6 +209,8 @@ def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
         if env.game_over():
             env.reset_game()
             elapsed_episodes += 1
+            if score > 50 and frames < 20000:
+                save_policy(agent, frames, folder)
             score = 0
             if frames_to_train != 0 and frames >= frames_to_train:
                 save_policy(agent, frames, folder)
@@ -219,20 +222,16 @@ def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     print("Playing game as %s" % agent.method)
 
     scores = []
     score = 0
-    highest_y_pipe = -5
     while nb_episodes > 0:
         # y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
         state = agent.parse_state(env.game.getGameState())
-        if env.game.getGameState()["next_pipe_top_y"] > highest_y_pipe:
-            highest_y_pipe = env.game.getGameState()["next_pipe_top_y"]
-
 
         # print("==========================")
         # print("-Original state-")
@@ -249,10 +248,7 @@ def test_policy(nb_episodes, agent):
         #
         # print("==========================")
 
-
-
         action = agent.policy(state)
-
         reward = env.act(env.getActionSet()[action])
         score += reward
 
@@ -263,10 +259,9 @@ def test_policy(nb_episodes, agent):
             score = 0
             nb_episodes -= 1
 
-    print("Highest y-pipe: %d" % highest_y_pipe)
     print("Best score: %d" % max(scores))
-    print("Average: %f" % (sum(scores)/len(scores)))
-    return max(scores), (sum(scores)/len(scores)), scores
+    print("Average: %f" % (sum(scores) / len(scores)))
+    return max(scores), (sum(scores) / len(scores)), scores
 
 
 def generate_learning_curve(folder, name, average_scores, max_scores, frames):
@@ -296,8 +291,9 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
     average_scores = []
     max_scores = []
     scores = []
-    for frame in range(step, total+1, step):
+    for frame in range(step, total + 1, step):
         file = folder + name + str(frame) + ".npy"
+        print(file)
         try:
             agent_to_test.pi = numpy.load(file).item()["Policy"]
         except FileNotFoundError:
@@ -309,7 +305,7 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
         average_scores.append(average)
         max_scores.append(max_score)
 
-    #generate_box_plot(folder, name, scores, frames)
+    # generate_box_plot(folder, name, scores, frames)
     generate_learning_curve(folder, name, average_scores, max_scores, frames)
 
 
@@ -317,7 +313,7 @@ class FlappyAgentQLearningElite(FlappyAgent):
     def __init__(self, LearningRate=0.12, epsilon=0.1, discount=1):
         super(FlappyAgentQLearningElite, self).__init__()
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 15)]
         self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 15)]
         # Pipe dist 39 þá er hann búinn að klessa
         # Pipe dist 143 á milli
@@ -327,11 +323,8 @@ class FlappyAgentQLearningElite(FlappyAgent):
         # Öfugt dist er mest -193
 
 
-
-
         self.states = list(itertools.product(*[
-            self.y_pos_intervals,
-            self.top_y_gap_intervals,
+            self.bird_relative,
             self.horizontal_distance_next_pipe,
             self.velocity_intervals,
         ]))
@@ -347,15 +340,247 @@ class FlappyAgentQLearningElite(FlappyAgent):
                 self.Q[(state, action)] = 0
 
     def observe(self, s1, a, r, s2, end):
-        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+        r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
 
         self.update_policy_fixed(s1)
 
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
 
-bird = FlappyAgentQLearningElite()
-print(len(bird.states))
-#run_game(bird, 0, 2000000, "Next_pipe_20_143")
-evaluate_policies(bird, "Next_pipe_20_143/", "Q_Learning_Elite_", 2000000, 50000)
+        return bird_relative, horizontal_distance_next_pipe, velocity
 
-#test_policy(1, bird)
 
+class FlappyAgentQLearningElitev2(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev2, self).__init__()
+        self.velocity_intervals = [-7, -6, -5, -4, -3, -2, -1, 0, 2, 5, 8]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 15)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 15)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
+
+        return bird_relative, horizontal_distance_next_pipe, velocity
+
+
+class FlappyAgentQLearningElitev3(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev3, self).__init__()
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 15)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 15)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+
+        return bird_relative, horizontal_distance_next_pipe
+
+
+class FlappyAgentQLearningElitev4(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev4, self).__init__()
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 15)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 50)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+
+        return bird_relative, horizontal_distance_next_pipe
+
+
+class FlappyAgentQLearningElitev5(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev5, self).__init__()
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 50)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 50)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+
+        return bird_relative, horizontal_distance_next_pipe
+
+
+class FlappyAgentQLearningElitev6(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev6, self).__init__()
+        self.velocity_intervals = [-7, -6, -5, -4, -3, -2, -1, 0, 2, 5, 8]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 8)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 8)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
+
+        return bird_relative, horizontal_distance_next_pipe, velocity
+
+
+# bird = FlappyAgentQLearningElitev2()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev2/", "Q_Learning_Elite_", 2000000, 50000)
+# bird = FlappyAgentQLearningElitev3()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev3/", "Q_Learning_Elite_", 2000000, 50000)
+# bird = FlappyAgentQLearningElitev4()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev4/", "Q_Learning_Elite_", 2000000, 50000)
+# bird = FlappyAgentQLearningElitev5()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev5/", "Q_Learning_Elite_", 2000000, 50000)
+bird = FlappyAgentQLearningElitev6()
+evaluate_policies(bird, "FlappyAgentQLearningElitev6/", "Q_Learning_Elite_", 2000000, 50000)
