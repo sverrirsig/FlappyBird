@@ -14,7 +14,7 @@ class FlappyAgent:
         self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 10)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 10)]
 
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(1, 150)), 9)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(1, 220)), 9)]
         self.horizontal_distance_next_pipe += [283]
 
         self.states = list(itertools.product(*[
