@@ -250,8 +250,10 @@ def test_policy(nb_episodes, agent):
 
         action = agent.policy(state)
         reward = env.act(env.getActionSet()[action])
+        old_score = score
         score += reward
-
+        if old_score < score and score % 10 == 0:
+            print("Pipes passed: %d" % score)
         if env.game_over():
             print("score for this episode: %d" % score)
             env.reset_game()
@@ -268,7 +270,7 @@ def generate_learning_curve(folder, name, average_scores, max_scores, frames):
     plt.figure(figsize=(20, 10))
     plt.title(folder)
     plt.xlabel("Frames trained on")
-    plt.ylabel("Score, 50 runs")
+    plt.ylabel("Score, 25 runs")
     average_line, = plt.plot(frames, average_scores, label="Average")
     max_line, = plt.plot(frames, max_scores, label="Max")
     plt.legend(handles=[average_line, max_line])
@@ -299,7 +301,7 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
         except FileNotFoundError:
             print("Rakki")
             break
-        max_score, average, score = test_policy(50, agent_to_test)
+        max_score, average, score = test_policy(25, agent_to_test)
         frames.append(frame)
         scores.append(score)
         average_scores.append(average)
@@ -367,7 +369,6 @@ class FlappyAgentQLearningElitev2(FlappyAgent):
         # Y-top er hæst 193
         # Mesta dist er 362
         # Öfugt dist er mest -193
-
 
         self.states = list(itertools.product(*[
             self.bird_relative,
@@ -573,6 +574,95 @@ class FlappyAgentQLearningElitev6(FlappyAgent):
 
         return bird_relative, horizontal_distance_next_pipe, velocity
 
+class FlappyAgentQLearningElitev8(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev8, self).__init__()
+        self.velocity_intervals = [-7, -6, -5, -4, -3, -2, -1, 0, 2, 5, 8]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 80)), 6)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-150, 200)), 6)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
+
+        return bird_relative, horizontal_distance_next_pipe, velocity
+
+
+class FlappyAgentQLearningElitev9(FlappyAgent):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+        super(FlappyAgentQLearningElitev9, self).__init__()
+        self.velocity_intervals = [-7, -6, -5, -4, -3, -2, -1, 0, 2, 5, 8]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 8)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-150, 200)), 6)]
+        # Pipe dist 39 þá er hann búinn að klessa
+        # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
+        self.states = list(itertools.product(*[
+            self.bird_relative,
+            self.horizontal_distance_next_pipe,
+            self.velocity_intervals,
+        ]))
+
+        self.discount = discount
+        self.epsilon = epsilon
+        self.learning_rate = LearningRate  # Todo: 0.11 er mjög gott, prófa kannski eitthvað í kringum það.
+        self.method = "Q_Learning_Elite"
+
+        for state in self.states:
+            self.pi[state] = random.randint(0, 1)
+            for action in self.actions:
+                self.Q[(state, action)] = 0
+
+    def observe(self, s1, a, r, s2, end):
+        self.Q[(s1, a)] = self.Q[(s1, a)] + self.learning_rate * (
+            r + self.discount * self.Q[(s2, self.pi[s2])] - self.Q[(s1, a)])
+
+        self.update_policy_fixed(s1)
+
+    def parse_state(self, state):
+        bird_relative = min(self.bird_relative,
+                            key=lambda x: abs(x - (state['player_y'] - state['next_pipe_top_y'])))
+        horizontal_distance_next_pipe = min(self.horizontal_distance_next_pipe,
+                                            key=lambda x: abs(x - state['next_pipe_dist_to_player']))
+        velocity = min(self.velocity_intervals, key=lambda x: abs(x - state['player_vel']))
+
+        return bird_relative, horizontal_distance_next_pipe, velocity
+
 
 # bird = FlappyAgentQLearningElitev2()
 # evaluate_policies(bird, "FlappyAgentQLearningElitev2/", "Q_Learning_Elite_", 2000000, 50000)
@@ -580,7 +670,21 @@ class FlappyAgentQLearningElitev6(FlappyAgent):
 # evaluate_policies(bird, "FlappyAgentQLearningElitev3/", "Q_Learning_Elite_", 2000000, 50000)
 # bird = FlappyAgentQLearningElitev4()
 # evaluate_policies(bird, "FlappyAgentQLearningElitev4/", "Q_Learning_Elite_", 2000000, 50000)
-# bird = FlappyAgentQLearningElitev5()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev5/", "Q_Learning_Elite_", 2000000, 50000)
-bird = FlappyAgentQLearningElitev6()
-evaluate_policies(bird, "FlappyAgentQLearningElitev6/", "Q_Learning_Elite_", 2000000, 50000)
+
+
+# bird = FlappyAgentQLearningElitev2()
+# bird.pi = numpy.load("FlappyAgentQLearningElitev2/Q_Learning_Elite_850000.npy").item()["Policy"]
+# test_policy(10, bird)
+
+
+# bird = FlappyAgentQLearningElitev6()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev6/", "Q_Learning_Elite_", 1100000, 50000)
+# bird = FlappyAgentQLearningElitev8()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev8/", "Q_Learning_Elite_", 1100000, 50000)
+# bird = FlappyAgentQLearningElitev9()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev9/", "Q_Learning_Elite_", 1100000, 50000)
+
+
+
+# bird = FlappyAgentQLearningElitev9()
+# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev9")
