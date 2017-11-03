@@ -219,33 +219,35 @@ def run_game(agent, nb_episodes=0, frames_to_train=0, folder=""):
 
 def test_policy(nb_episodes, agent):
     reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
+    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=True, rng=None,
               reward_values=reward_values)
     env.init()
     print("Playing game as %s" % agent.method)
 
     scores = []
     score = 0
+    highest_y_pipe = -5
     while nb_episodes > 0:
         # y_pos, top_y_gap, horizontal_distance_next_pipe, velocity
         state = agent.parse_state(env.game.getGameState())
+        if env.game.getGameState()["next_pipe_top_y"] > highest_y_pipe:
+            highest_y_pipe = env.game.getGameState()["next_pipe_top_y"]
 
 
-
-        print("==========================")
-        print("-Original state-")
-        print("Bird-Y: %s" % env.game.getGameState()["player_y"])
-        print("Gap-Y: %s" % env.game.getGameState()["next_pipe_top_y"])
-        print("Pipe-Distance: %s" % env.game.getGameState()["next_pipe_dist_to_player"])
-        print("Bird-Velocity: %s" % env.game.getGameState()["player_vel"])
-
-        print("-Changed state-")
-        print("Bird-Y: %s" % state[0])
-        print("Gap-Y: %s" % state[1])
-        print("Pipe-Distance: %s" % state[2])
-        print("Bird-Velocity: %s" % state[3])
-
-        print("==========================")
+        # print("==========================")
+        # print("-Original state-")
+        # print("Bird-Y: %s" % env.game.getGameState()["player_y"])
+        # print("Gap-Y: %s" % env.game.getGameState()["next_pipe_top_y"])
+        # print("Pipe-Distance: %s" % env.game.getGameState()["next_pipe_dist_to_player"])
+        # print("Bird-Velocity: %s" % env.game.getGameState()["player_vel"])
+        #
+        # print("-Changed state-")
+        # print("Bird-Y: %s" % state[0])
+        # print("Gap-Y: %s" % state[1])
+        # print("Pipe-Distance: %s" % state[2])
+        # print("Bird-Velocity: %s" % state[3])
+        #
+        # print("==========================")
 
 
 
@@ -261,6 +263,7 @@ def test_policy(nb_episodes, agent):
             score = 0
             nb_episodes -= 1
 
+    print("Highest y-pipe: %d" % highest_y_pipe)
     print("Best score: %d" % max(scores))
     print("Average: %f" % (sum(scores)/len(scores)))
     return max(scores), (sum(scores)/len(scores)), scores
@@ -313,12 +316,16 @@ def evaluate_policies(agent_to_test, folder, name, total, step):
 class FlappyAgentQLearningElite(FlappyAgent):
     def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
         super(FlappyAgentQLearningElite, self).__init__()
-        self.y_pos_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(0, 388)), 15)]
-        self.top_y_gap_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(25, 193)), 15)]
         self.velocity_intervals = [x[-1] for x in numpy.array_split(numpy.array(range(-8, 11)), 15)]
-        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(20, 143)), 15)]
+        self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(3, 284)), 15)]
+        self.bird_relative = [x[-1] for x in numpy.array_split(numpy.array(range(-193, 362)), 15)]
         # Pipe dist 39 þá er hann búinn að klessa
         # Pipe dist 143 á milli
+        # Y-top er lægst 25
+        # Y-top er hæst 193
+        # Mesta dist er 362
+        # Öfugt dist er mest -193
+
 
 
 
@@ -344,6 +351,7 @@ class FlappyAgentQLearningElite(FlappyAgent):
 
         self.update_policy_fixed(s1)
 
+
 bird = FlappyAgentQLearningElite()
 bird.pi = numpy.load("rate_0.12/Q_Learning_Elite_2000175.npy").item()["Policy"]
 print("Bird velocity:")
@@ -366,5 +374,5 @@ for i in bird.top_y_gap_intervals:
     print(i)
 
 print()
-test_policy(1, bird)
+test_policy(100, bird)
 
