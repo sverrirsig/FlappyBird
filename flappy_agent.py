@@ -250,10 +250,9 @@ def test_policy(nb_episodes, agent):
 
         action = agent.policy(state)
         reward = env.act(env.getActionSet()[action])
-        old_score = score
+
         score += reward
-        if old_score < score and score % 10 == 0:
-            print("Pipes passed: %d" % score)
+
         if env.game_over():
             print("score for this episode: %d" % score)
             env.reset_game()
@@ -531,7 +530,7 @@ class FlappyAgentQLearningElitev5(FlappyAgent):
 
 
 class FlappyAgentQLearningElitev6(FlappyAgent):
-    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1):
+    def __init__(self, LearningRate=0.11, epsilon=0.1, discount=1.0):
         super(FlappyAgentQLearningElitev6, self).__init__()
         self.velocity_intervals = [-7, -6, -5, -4, -3, -2, -1, 0, 2, 5, 8]
         self.horizontal_distance_next_pipe = [x[-1] for x in numpy.array_split(numpy.array(range(5, 144)), 8)]
@@ -664,27 +663,17 @@ class FlappyAgentQLearningElitev9(FlappyAgent):
         return bird_relative, horizontal_distance_next_pipe, velocity
 
 
-# bird = FlappyAgentQLearningElitev2()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev2/", "Q_Learning_Elite_", 2000000, 50000)
-# bird = FlappyAgentQLearningElitev3()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev3/", "Q_Learning_Elite_", 2000000, 50000)
-# bird = FlappyAgentQLearningElitev4()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev4/", "Q_Learning_Elite_", 2000000, 50000)
+# bird = FlappyAgentQLearningElitev6(discount=0.99)
+# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev6_discount_0.99")
+# bird = FlappyAgentQLearningElitev6(discount=0.995)
+# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev6_discount_0.995")
+# bird = FlappyAgentQLearningElitev6(discount=0.999)
+# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev6_discount_0.999")
+# bird = FlappyAgentQLearningElitev6(discount=0.9995)
+# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev6_discount_0.9995")
 
-
-# bird = FlappyAgentQLearningElitev2()
-# bird.pi = numpy.load("FlappyAgentQLearningElitev2/Q_Learning_Elite_850000.npy").item()["Policy"]
-# test_policy(10, bird)
-
-
-# bird = FlappyAgentQLearningElitev6()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev6/", "Q_Learning_Elite_", 1100000, 50000)
-# bird = FlappyAgentQLearningElitev8()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev8/", "Q_Learning_Elite_", 1100000, 50000)
-# bird = FlappyAgentQLearningElitev9()
-# evaluate_policies(bird, "FlappyAgentQLearningElitev9/", "Q_Learning_Elite_", 1100000, 50000)
-
-
-
-# bird = FlappyAgentQLearningElitev9()
-# run_game(bird, 0, 1100000, "FlappyAgentQLearningElitev9")
+#bird = FlappyAgentQLearningElitev6()
+# evaluate_policies(bird, "FlappyAgentQLearningElitev6_discount_0.99/", "Q_Learning_Elite_", 1100000, 50000)
+# evaluate_policies(bird, "FlappyAgentQLearningElitev6_discount_0.995/", "Q_Learning_Elite_", 1100000, 50000)
+# evaluate_policies(bird, "FlappyAgentQLearningElitev6_discount_0.999/", "Q_Learning_Elite_", 1100000, 50000)
+#evaluate_policies(bird, "FlappyAgentQLearningElitev6_discount_0.9995/", "Q_Learning_Elite_", 1100000, 50000)
